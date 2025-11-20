@@ -35,6 +35,9 @@ async def make_incident(incident: IncidentRequest):
     # Return list of strings (to be populated later)
     return getMatchingIncidents(incident.description)
 
+def update_memory(description: str, resolution: str):
+    print("This should do stuff")
+
 
 @app.put("/triggers/incident")
 async def update_incident(incident: IncidentUpdateRequest):
@@ -42,6 +45,8 @@ async def update_incident(incident: IncidentUpdateRequest):
     result = supabase.table("incidents").update({
         "resolution": incident.resolution
     }).eq("description", incident.description).execute()
+
+    update_memory(incident.description, incident.resolution)
 
     if not result.data:
         return {"status": "error", "message": "Incident not found"}
