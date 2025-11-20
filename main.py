@@ -20,9 +20,24 @@ class IncidentUpdateRequest(BaseModel):
     description: str
     resolution: str
 
+def queryRag(description: str) -> list[int]:
+    # TODO: Implement RAG query to find matching incident IDs
+    return []
+
+
 def getMatchingIncidents(description: str) -> list[str]:
     # Access RAG to get matching incidents from description
-    return []
+    incident_ids = queryRag(description)
+
+    if not incident_ids:
+        return []
+
+    # Query database for the resolutions of matching incidents
+    result = supabase.table("incidents").select("resolution").in_("id", incident_ids).execute()
+
+    # Extract resolution strings from the results
+    resolutions = [incident["resolution"] for incident in result.data if incident.get("resolution")]
+    return resolutions
 
 
 @app.post("/trigger/incident")
@@ -35,8 +50,9 @@ async def make_incident(incident: IncidentRequest):
     # Return list of strings (to be populated later)
     return getMatchingIncidents(incident.description)
 
-def update_memory(description: str, resolution: str):
+def update_memory(description: str, resolution: str) -> list[int]:
     print("This should do stuff")
+    return []
 
 
 @app.put("/triggers/incident")
