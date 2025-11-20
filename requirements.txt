@@ -1,0 +1,3 @@
+# No external dependencies required for basic server
+# Using Python's built-in http.server for fast startup
+# Python 3.7+ required
