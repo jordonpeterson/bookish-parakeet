@@ -49,6 +49,20 @@ The API will be available at `http://localhost:8000`
       -d '{"description": "Database connection timeout", "resolution": "Restarted the database service"}'
     ```
 
+### Testing
+
+Run all tests with pytest:
+```bash
+python3 -m pytest test_api.py -v
+```
+
+Or simply:
+```bash
+pytest test_api.py -v
+```
+
+The `-v` flag enables verbose output showing each test result.
+
 ### Supabase
 
 - Studio URL: http://127.0.0.1:54323

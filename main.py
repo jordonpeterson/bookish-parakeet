@@ -20,8 +20,8 @@ class IncidentUpdateRequest(BaseModel):
     description: str
     resolution: str
 
-def getMatchingIncidents(description: string) --> string[]:
-#     Access RAG to get matching incidents from description
+def getMatchingIncidents(description: str) -> list[str]:
+    # Access RAG to get matching incidents from description
     return []
 
 
