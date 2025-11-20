@@ -31,11 +31,22 @@ The API will be available at `http://localhost:8000`
 
 - `POST /trigger/incident` - Create a new incident
   - Request body: `{"description": "string"}`
+  - Returns: List of strings (to be populated with relevant information)
   - Example:
     ```bash
     curl -X POST http://localhost:8000/trigger/incident \
       -H "Content-Type: application/json" \
       -d '{"description": "Database connection timeout"}'
+    ```
+
+- `PUT /triggers/incident` - Update an existing incident by finding it via description
+  - Request body: `{"description": "string", "resolution": "string"}`
+  - Finds the incident with matching description and adds the resolution
+  - Example:
+    ```bash
+    curl -X PUT http://localhost:8000/triggers/incident \
+      -H "Content-Type: application/json" \
+      -d '{"description": "Database connection timeout", "resolution": "Restarted the database service"}'
     ```
 
 ### Supabase
