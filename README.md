@@ -29,11 +29,11 @@ The API will be available at `http://localhost:8000`
 
 ### API Endpoints
 
-- `POST /makeIncident` - Create a new incident
+- `POST /trigger/incident` - Create a new incident
   - Request body: `{"description": "string"}`
   - Example:
     ```bash
-    curl -X POST http://localhost:8000/makeIncident \
+    curl -X POST http://localhost:8000/trigger/incident \
       -H "Content-Type: application/json" \
       -d '{"description": "Database connection timeout"}'
     ```
