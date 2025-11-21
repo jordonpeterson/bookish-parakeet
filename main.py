@@ -61,8 +61,8 @@ def queryRag(description: str) -> list[int]:
             'match_incident_embeddings',
             {
                 'query_embedding': embedding_str,
-                'match_threshold': 0.5,
-                'match_count': 5
+                'match_threshold': 0.75,
+                'match_count': 3
             }
         ).execute()
 
@@ -109,46 +109,47 @@ def update_memory(description: str, resolution: str) -> list[int]:
 
     Returns:
         List of incident IDs that were updated with embeddings
+
+    Raises:
+        ValueError: If Gemini API key is not configured or description is empty
+        Exception: If embedding generation or storage fails
     """
-    if not GEMINI_API_KEY or not description:
-        return []
+    if not GEMINI_API_KEY:
+        raise ValueError("Gemini API key not configured")
 
-    try:
-        # Find the incident ID by description
-        result = supabase.table("incidents").select("id").eq("description", description).execute()
+    if not description:
+        raise ValueError("Description cannot be empty")
 
-        if not result.data:
-            print(f"No incident found with description: {description}")
-            return []
+    # Find the incident ID by description
+    result = supabase.table("incidents").select("id").eq("description", description).execute()
 
-        incident_id = result.data[0]["id"]
+    if not result.data:
+        raise ValueError(f"No incident found with description: {description}")
 
-        # Generate embedding for the description using Gemini
-        # Use task_type="retrieval_document" for storing documents
-        embedding_result = genai.embed_content(
-            model="models/embedding-001",
-            content=description,
-            task_type="retrieval_document",
-            output_dimensionality=768
-        )
-        embedding = embedding_result['embedding']
+    incident_id = result.data[0]["id"]
 
-        # Convert embedding list to PostgreSQL vector format
-        embedding_str = "[" + ",".join(map(str, embedding)) + "]"
+    # Generate embedding for the description using Gemini
+    # Use task_type="retrieval_document" for storing documents
+    embedding_result = genai.embed_content(
+        model="models/embedding-001",
+        content=description,
+        task_type="retrieval_document",
+        output_dimensionality=768
+    )
+    embedding = embedding_result['embedding']
 
-        # Upsert the embedding into the incident_embeddings table
-        # Use upsert to handle cases where embedding already exists
-        upsert_result = supabase.table("incident_embeddings").upsert({
-            "incident_id": incident_id,
-            "embedding": embedding_str
-        }, on_conflict="incident_id").execute()
+    # Convert embedding list to PostgreSQL vector format
+    embedding_str = "[" + ",".join(map(str, embedding)) + "]"
 
-        print(f"Successfully stored embedding for incident {incident_id}")
-        return [incident_id]
+    # Upsert the embedding into the incident_embeddings table
+    # Use upsert to handle cases where embedding already exists
+    upsert_result = supabase.table("incident_embeddings").upsert({
+        "incident_id": incident_id,
+        "embedding": embedding_str
+    }, on_conflict="incident_id").execute()
 
-    except Exception as e:
-        print(f"Error updating memory: {e}")
-        return []
+    print(f"Successfully stored embedding for incident {incident_id}")
+    return [incident_id]
 
 
 @app.put("/triggers/incident")
@@ -158,10 +159,24 @@ async def update_incident(incident: IncidentUpdateRequest):
         "resolution": incident.resolution
     }).eq("description", incident.description).execute()
 
-    update_memory(incident.description, incident.resolution)
-
     if not result.data:
         return {"status": "error", "message": "Incident not found"}
+
+    # Try to store embeddings, but return error if it fails
+    try:
+        update_memory(incident.description, incident.resolution)
+    except ValueError as e:
+        return {
+            "status": "partial_success",
+            "message": f"Incident updated but embedding failed: {str(e)}",
+            "data": result.data
+        }
+    except Exception as e:
+        return {
+            "status": "partial_success",
+            "message": f"Incident updated but embedding storage failed: {str(e)}",
+            "data": result.data
+        }
 
     return {"status": "success", "data": result.data}
 
